@@ -12,4 +12,6 @@ public interface ChatService {
      ChatMessage process(ChatRequest req);
 
      List<ChatHistoryResponse> history(ChatHistory chatHistory);
+
+     List<ChatHistoryResponse> userAllChatHistory(String userId);
 }
