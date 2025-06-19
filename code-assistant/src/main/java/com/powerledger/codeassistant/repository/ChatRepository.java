@@ -18,4 +18,7 @@ public interface ChatRepository extends JpaRepository<ChatMessage, Long> {
 
     @Query("select ch from ChatMessage ch where ch.chatName=:chatName and ch.user.id=:userId ")
     List<ChatMessage> findAllByChatNameAndUserId(String chatName, String userId);
+
+    @Query("select ch from ChatMessage ch where ch.user.id=:userId ")
+    List<ChatMessage> findAllChatByUserId(String userId);
 }
