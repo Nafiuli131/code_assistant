@@ -141,7 +141,3 @@ src/
 ├── repository/        # JPA repositories
 └── service/           # Business logic & Together.ai integration
 
-🧑‍💻 Author
-Nafiul Islam
-
-Developer @ PowerLedger (Code Assistant Project)
