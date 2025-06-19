@@ -18,6 +18,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/chat")
+@CrossOrigin(origins = "*")  // allow any origin
 public class ChatController {
 
     @Autowired
