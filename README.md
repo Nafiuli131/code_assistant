@@ -140,4 +140,8 @@ src/
 ├── model/             # JPA entities
 ├── repository/        # JPA repositories
 └── service/           # Business logic & Together.ai integration
+![c3](https://github.com/user-attachments/assets/51d4a2ce-29bc-4a77-b19d-30b8eb3610cc)
+![c2](https://github.com/user-attachments/assets/631b3dd0-eec3-499e-b774-05314299a6c1)
+![c1](https://github.com/user-attachments/assets/ed035dba-a48f-4289-9861-500d86fcef1e)
+
 
