@@ -1,78 +1,64 @@
-# 🧠 Code Assistant application
+🧠 Code Assistant Application
+This is a Spring Boot-based backend service that integrates with Together.ai's meta-llama/Llama-Vision-Free model. It simulates a chat assistant capable of remembering conversations on a per-user and per-chat session basis.
 
-A Spring Boot-based backend service that integrates with Together.ai's `meta-llama/Llama-Vision-Free` model to simulate a chat assistant that remembers conversations per user and chat session.
+🚀 Features
+User Management: Create new users for the application.
 
----
+Chat Sessions: Start and continue chat sessions, maintaining conversational context.
 
-## 🚀 Features
+Chat History Retrieval: Easily retrieve full chat history for any user and specific chat name.
 
-- Create users
-- Start and continue chat sessions
-- Retrieve full chat history per user and chat name
-- Send text + (optional) image prompt to Together.ai
-- Memory-aware responses based on chat history
+Flexible Prompting: Send text prompts with optional image inputs to the Together.ai model.
 
----
+Contextual Responses: The assistant provides memory-aware responses based on the ongoing chat history.
 
-## 🛠️ Tech Stack
+🛠️ Tech Stack
+Java 17
 
-- Java 17
-- Spring Boot
-- JPA (Hibernate)
-- Together.ai API
-- H2 / MySQL (as needed)
+Spring Boot
 
----
+JPA (Hibernate)
 
-## 📦 API Endpoints
+Together.ai API
 
-### ✅ Create a New User
+H2 / MySQL (for database persistence)
 
+📦 API Endpoints
+✅ Create a New User
 POST /user
 
-bash
-Copy
-Edit
+Request:
 
-#### Request:
-```json
 {
   "userName": "Nafiul Islam",
   "password": "1234"
 }
+
 ✅ Get User by UserName
-sql
-Copy
-Edit
 GET /user?userName=Nafiul Islam
+
 Response:
-json
-Copy
-Edit
+
 {
   "id": 102,
   "userName": "Nafiul Islam",
   "password": "1234"
 }
+
 💬 Chat with Assistant
-bash
-Copy
-Edit
 POST /chat
+
 Request:
-json
-Copy
-Edit
+
 {
   "userId": 102,
   "chatName": "firstChat",
   "prompt": "add previous sum with 100 ",
   "imageUrl": null
 }
+
 Response:
-json
-Copy
-Edit
+
 {
   "id": 163,
   "prompt": "add previous sum with 100 ",
@@ -80,23 +66,19 @@ Edit
   "imageUrl": null,
   "ts": "2025-06-19T14:12:22.803281919"
 }
+
 📚 Get Chat History
-bash
-Copy
-Edit
 POST /chat/history
+
 Request:
-json
-Copy
-Edit
+
 {
   "userId": 102,
   "chatName": "firstChat"
 }
+
 Response:
-json
-Copy
-Edit
+
 [
   {
     "chatName": "firstChat",
@@ -129,43 +111,36 @@ Edit
     "chatText": "We previously calculated that 2 + 2 = 4.\n\n Adding 4 to 100:\n\n 100 + 4 = 104"
   }
 ]
+
 📌 Setup
 Clone the repository:
 
-bash
-Copy
-Edit
 git clone https://github.com/your-username/code-assistant.git
 cd code-assistant
+
 Configure your application.properties with your Together.ai API key:
 
-properties
-Copy
-Edit
 together.api.key=your_api_key_here
+
 Run the application:
 
-bash
-Copy
-Edit
 ./mvnw spring-boot:run
+
 🧠 Together.ai Model Used
-meta-llama/Llama-Vision-Free
+The application utilizes the meta-llama/Llama-Vision-Free model from Together.ai.
 
-Context length: ~8192 tokens
+Context length: Approximately 8192 tokens.
 
-Supports multi-turn conversation + image input (optional)
+Capabilities: Supports multi-turn conversations and optional image inputs.
 
 🗂 Directory Structure
-bash
-Copy
-Edit
 src/
 ├── controller/        # REST endpoints
 ├── dto/               # Request/response payloads
 ├── model/             # JPA entities
 ├── repository/        # JPA repositories
-├── service/           # Business logic & Together.ai integration
+└── service/           # Business logic & Together.ai integration
+
 🧑‍💻 Author
 Nafiul Islam
 
