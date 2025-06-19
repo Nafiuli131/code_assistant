@@ -235,29 +235,64 @@
         try {
             const res = await fetch(`${API_BASE}/user?userName=${encodeURIComponent(username)}`);
             if (!res.ok) throw new Error('User not found');
-            const user = await res.json();
+
+            const user = await res.json();  // ✅ FIXED: define the user here
 
             if (user && user.password === password) {
                 currentUser = user;
-                // Set username display
                 document.getElementById('userNameDisplay').textContent = currentUser.userName;
 
-                // Initialize chats object (empty or load from backend)
-                chats = {};
-                currentChat = null;
-
-                // Show chat page
                 showPage('chatPage');
 
-                // Create default chat session
-                createNewChat('default');
+                // ✅ Load old chats
+                fetchChatHistory(currentUser.id || currentUser.userId);
             } else {
                 alert('Invalid username or password');
             }
-        } catch(e) {
+        } catch (e) {
             alert('Login failed: ' + e.message);
         }
     }
+
+
+    async function fetchChatHistory(userId) {
+        try {
+            const res = await fetch(`${API_BASE}/chat/userAllChatHistory`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
+
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}`);
+            }
+
+            const history = await res.json();
+            chats = {};
+            for (const chat of history) {
+                if (!chats[chat.chatName]) {
+                    chats[chat.chatName] = [];
+                }
+                chats[chat.chatName].push({
+                    prompt: chat.prompt,
+                    response: chat.response,
+                    imageUrl: chat.imageUrl
+                });
+            }
+
+            const allChats = Object.keys(chats);
+            if (allChats.length > 0) {
+                switchChat(allChats[0]);
+            } else {
+                createNewChat('default');
+            }
+            renderChatList();
+        } catch (err) {
+            console.error('Failed to fetch chat history:', err);
+        }
+    }
+
+
 
     // Create new chat with given name or prompt for name
     function createNewChat(chatName) {
@@ -404,4 +439,3 @@
 </script>
 </body>
 </html>
-
