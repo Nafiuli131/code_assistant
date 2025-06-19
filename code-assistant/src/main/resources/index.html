@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Multi-Chat AI Assistant with Login</title>
+    <style>
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+        }
+        .container {
+            display: flex; height: 100vh;
+        }
+        #sidebar {
+            width: 250px; background: #fff; border-right: 1px solid #ccc;
+            display: flex; flex-direction: column;
+        }
+        #chatList {
+            flex-grow: 1; overflow-y: auto; padding: 10px;
+        }
+        #chatList div {
+            padding: 8px 12px; margin-bottom: 5px;
+            border-radius: 4px; cursor: pointer;
+            background: #eee;
+        }
+        #chatList div.active {
+            background: #2196f3; color: white;
+            font-weight: bold;
+        }
+        #newChatBtn {
+            padding: 10px; background: #2196f3; color: white;
+            border: none; cursor: pointer;
+        }
+
+        #main {
+            flex-grow: 1; display: flex; flex-direction: column;
+        }
+        #header {
+            padding: 15px; background: white;
+            border-bottom: 1px solid #ccc;
+            display: flex; justify-content: space-between;
+            align-items: center;
+        }
+        #chatBox {
+            flex-grow: 1; padding: 15px;
+            overflow-y: auto; background: white;
+            display: flex; flex-direction: column;
+        }
+        .chat-entry {
+            margin-bottom: 15px;
+            max-width: 70%;
+            padding: 8px 12px;
+            border-radius: 12px;
+            word-wrap: break-word;
+        }
+        .chat-entry.user {
+            background: #daf1ff;
+            align-self: flex-end;
+        }
+        .chat-entry.ai {
+            background: #f1f1f1;
+            align-self: flex-start;
+            font-style: italic;
+        }
+        #inputArea {
+            padding: 10px; background: white; border-top: 1px solid #ccc;
+            display: flex; gap: 8px;
+        }
+        #prompt {
+            flex-grow: 1;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            resize: vertical;
+            min-height: 40px;
+        }
+        #imgUrl {
+            width: 200px;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+        #sendBtn {
+            padding: 0 16px;
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        /* Pages */
+        .page {
+            display: none;
+            width: 100%;
+            max-width: 600px;
+            margin: 50px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px #aaa;
+        }
+        .page.active {
+            display: block;
+        }
+        .page input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        .page button {
+            width: 100%;
+            padding: 10px;
+            background: #2196f3;
+            color: white;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+        .page p {
+            margin-top: 10px;
+            text-align: center;
+        }
+        .page p a {
+            cursor: pointer;
+            color: #2196f3;
+            text-decoration: underline;
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- Signup Page -->
+<div id="signupPage" class="page active">
+    <h2>🔐 Sign Up</h2>
+    <input id="suName" placeholder="Username" />
+    <input id="suPass" placeholder="Password" type="password" />
+    <button onclick="signUp()">Sign Up</button>
+    <p>Already have an account? <a onclick="showPage('loginPage')">Login</a></p>
+</div>
+
+<!-- Login Page -->
+<div id="loginPage" class="page">
+    <h2>🔓 Login</h2>
+    <input id="loginName" placeholder="Username" />
+    <input id="loginPass" placeholder="Password" type="password" />
+    <button onclick="login()">Login</button>
+    <p>No account? <a onclick="showPage('signupPage')">Sign up</a></p>
+</div>
+
+<!-- Chat Page -->
+<div id="chatPage" style="display: flex; height: 100vh; flex-direction: row;">
+
+    <div id="sidebar">
+        <button id="newChatBtn">+ New Chat</button>
+        <div id="chatList"></div>
+    </div>
+
+    <div id="main">
+        <div id="header">
+            <div>Logged in as: <b id="userNameDisplay"></b></div>
+            <button onclick="logout()">Logout</button>
+        </div>
+        <div id="chatBox"></div>
+        <div id="inputArea">
+            <textarea id="prompt" placeholder="Ask something..."></textarea>
+            <input id="imgUrl" placeholder="Optional image URL" />
+            <button id="sendBtn">Send</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = 'http://localhost:8080';
+
+    // Simple in-memory user storage for demo
+    let users = []; // will fetch/store on signup/login
+    let currentUser = null; // { userName, password, userId }
+    let chats = {}; // { chatName: [ {prompt, response, imageUrl} ] }
+    let currentChat = null;
+
+    // Show/hide pages helper
+    function showPage(id) {
+        ['signupPage', 'loginPage', 'chatPage'].forEach(pageId => {
+            document.getElementById(pageId).classList.remove('active');
+            if (pageId === id) {
+                if (id === 'chatPage') {
+                    document.getElementById(pageId).style.display = 'flex';
+                } else {
+                    document.getElementById(pageId).style.display = 'block';
+                }
+                document.getElementById(pageId).classList.add('active');
+            } else {
+                document.getElementById(pageId).style.display = 'none';
+            }
+        });
+    }
+
+    async function signUp() {
+        const username = document.getElementById('suName').value.trim();
+        const password = document.getElementById('suPass').value.trim();
+        if (!username || !password) {
+            alert('Please enter username and password');
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/user`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ userName: username, password })
+            });
+            const text = await res.text();
+            alert(text);
+            if (res.ok) {
+                showPage('loginPage');
+            }
+        } catch(e) {
+            alert('Signup failed: ' + e.message);
+        }
+    }
+
+    async function login() {
+        const username = document.getElementById('loginName').value.trim();
+        const password = document.getElementById('loginPass').value.trim();
+        if (!username || !password) {
+            alert('Please enter username and password');
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE}/user?userName=${encodeURIComponent(username)}`);
+            if (!res.ok) throw new Error('User not found');
+            const user = await res.json();
+
+            if (user && user.password === password) {
+                currentUser = user;
+                // Set username display
+                document.getElementById('userNameDisplay').textContent = currentUser.userName;
+
+                // Initialize chats object (empty or load from backend)
+                chats = {};
+                currentChat = null;
+
+                // Show chat page
+                showPage('chatPage');
+
+                // Create default chat session
+                createNewChat('default');
+            } else {
+                alert('Invalid username or password');
+            }
+        } catch(e) {
+            alert('Login failed: ' + e.message);
+        }
+    }
+
+    // Create new chat with given name or prompt for name
+    function createNewChat(chatName) {
+        if (!chatName) {
+            chatName = prompt('Enter new chat name:');
+            if (!chatName) return;
+        }
+        if (chats[chatName]) {
+            alert('Chat with this name already exists!');
+            switchChat(chatName);
+            return;
+        }
+        chats[chatName] = [];
+        switchChat(chatName);
+        renderChatList();
+    }
+
+    // Switch to chatName chat
+    function switchChat(chatName) {
+        if (!chats[chatName]) {
+            alert('Chat not found');
+            return;
+        }
+        currentChat = chatName;
+        renderChatList();
+        loadChatHistory(chatName);
+    }
+
+    function renderChatList() {
+        const chatListElem = document.getElementById('chatList');
+        chatListElem.innerHTML = '';
+        Object.keys(chats).forEach(name => {
+            const div = document.createElement('div');
+            div.textContent = name;
+            if (name === currentChat) div.classList.add('active');
+            div.onclick = () => switchChat(name);
+            chatListElem.appendChild(div);
+        });
+    }
+
+    function loadChatHistory(chatName) {
+        const chatBoxElem = document.getElementById('chatBox');
+        chatBoxElem.innerHTML = '';
+        chats[chatName].forEach(({prompt, response, imageUrl}) => {
+            appendMessage('user', prompt);
+            appendMessage('ai', response, imageUrl);
+        });
+    }
+
+    function appendMessage(sender, message, imageUrl=null) {
+        const chatBoxElem = document.getElementById('chatBox');
+        const div = document.createElement('div');
+        div.className = 'chat-entry ' + (sender === 'user' ? 'user' : 'ai');
+        div.innerHTML = `<div>${escapeHtml(message)}</div>`;
+        if (imageUrl) {
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.style.maxWidth = '100px';
+            img.style.marginTop = '5px';
+            div.appendChild(img);
+        }
+        chatBoxElem.appendChild(div);
+        chatBoxElem.scrollTop = chatBoxElem.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    async function sendChat() {
+        if (!currentChat) {
+            alert('Please create or select a chat first!');
+            return;
+        }
+        if (!currentUser) {
+            alert('Please login first');
+            return;
+        }
+        const promptElem = document.getElementById('prompt');
+        const imgUrlElem = document.getElementById('imgUrl');
+        const prompt = promptElem.value.trim();
+        if (!prompt) {
+            alert('Please enter a prompt');
+            return;
+        }
+        const imageUrl = imgUrlElem.value.trim() || null;
+
+        // Append user message
+        appendMessage('user', prompt);
+
+        // Clear inputs
+        promptElem.value = '';
+        imgUrlElem.value = '';
+
+        // Build body for your API
+        const body = {
+            userId: currentUser.id || currentUser.userId || 102, // fallback 102
+            chatName: currentChat,
+            prompt,
+            imageUrl
+        };
+
+        try {
+            const res = await fetch(`${API_BASE}/chat`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            });
+            if (!res.ok) throw new Error('API error ' + res.status);
+            const data = await res.json();
+
+            appendMessage('ai', data.response, data.imageUrl);
+
+            // Save to local chat history
+            chats[currentChat].push({ prompt, response: data.response, imageUrl: data.imageUrl });
+        } catch(e) {
+            appendMessage('ai', 'Error: ' + e.message);
+        }
+    }
+
+    function logout() {
+        currentUser = null;
+        chats = {};
+        currentChat = null;
+
+        document.getElementById('userNameDisplay').textContent = '';
+
+        // Clear chat UI
+        document.getElementById('chatBox').innerHTML = '';
+        document.getElementById('chatList').innerHTML = '';
+        document.getElementById('prompt').value = '';
+        document.getElementById('imgUrl').value = '';
+
+        // Show login page
+        showPage('loginPage');
+    }
+
+    // Setup event listeners
+    document.getElementById('newChatBtn').onclick = () => createNewChat();
+    document.getElementById('sendBtn').onclick = sendChat;
+
+</script>
+</body>
+</html>
+
