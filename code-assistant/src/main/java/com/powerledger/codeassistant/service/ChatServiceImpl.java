@@ -109,4 +109,18 @@ public class ChatServiceImpl implements ChatService {
         return history;
     }
 
+    @Override
+    public List<ChatHistoryResponse> userAllChatHistory(String userId) {
+        List<ChatMessage> allByChatNameAndUserId = chatRepository.findAllChatByUserId(userId);
+        List<ChatHistoryResponse> history = new ArrayList<>();
+        for (ChatMessage chatMessage : allByChatNameAndUserId) {
+            ChatHistoryResponse chatHistoryResponse = new ChatHistoryResponse();
+            chatHistoryResponse.setChatName(chatMessage.getChatName());
+            chatHistoryResponse.setChatText(chatMessage.getText());
+            chatHistoryResponse.setRole(chatMessage.getRole());
+            history.add(chatHistoryResponse);
+        }
+        return history;
+    }
+
 }
